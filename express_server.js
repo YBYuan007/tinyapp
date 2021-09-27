@@ -14,15 +14,14 @@ app.get ("/urls", (req,res) =>{
   res.render("urls_index", templateVars);
 })
 
-app.get("/hello", (req,res) =>{
-  const templateVars = {greeting: ""}; 
-  res.render("urls_index" , templateVars);
+app.get("/urls/:shortURL", (req,res) => {
+  console.log(req.params); 
+  const templateVars={shortURL:req.params.shortURL, longURL:urlDatabase[req.params.shortURL]}
+  if (urlDatabase[req.params.shortURL]){
+    return res.render("urls_show", templateVars); 
+  } 
+  return res.send("Did not find this Long URL")
 })
-// app.get("/hello", (req, res) => {
-//   // res.send("check yo!");
-//   // res.json(urlDatabase);
-//   res.send("<html><body>hello <b>world </b></body></html>\n")
-// })
 app.listen(PORT, ()=>{
   console.log(`example app is listening on port ${PORT}`);
 }) 
