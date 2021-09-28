@@ -4,7 +4,6 @@ const app = express();
 const bodyParser = require("body-parser") ; 
 const PORT = 8080; 
 
-
 app.set("view engine", "ejs");
 
 function generateRandomString() {
@@ -23,9 +22,9 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls" , (req,res)=>{
-  console.log(req.body); 
+  // console.log(req.body); 
   urlDatabase[generateRandomString()] = req.body.longURL;
-  console.log(urlDatabase);
+  // console.log(urlDatabase);
   res.redirect("/urls");
 ;})
 
@@ -53,6 +52,15 @@ app.get("/urls/:shortURL", (req,res) => {
     return res.render("urls_show", templateVars); 
   } 
   return res.send("Did not find this Long URL")
+})
+
+app.post("/urls/:shortURL/delete", (req,res) => {
+  // console.log(req.params); 
+  const sURL = req.params.shortURL; 
+  console.log(sURL); 
+  delete urlDatabase[sURL]; 
+  // console.log(req.params);
+  res.redirect("/urls")
 })
 
 app.listen(PORT, ()=>{
