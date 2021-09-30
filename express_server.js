@@ -35,7 +35,7 @@ let  users = {
   }
 }
 
-const createUser = function ( email, password, users) {
+const createUser = function (email, password, users) {
   const userId = generateRandomString();
   users[userId] = {
     id: userId,
@@ -59,7 +59,7 @@ const authenticateUser = function (email, password, users) {
   const userFound = findUserByEmail(email, users);
   if (userFound && userFound.password === password) {
     return userFound;
-  }
+  } 
   return false;
 };
 
@@ -146,15 +146,28 @@ app.post("/register", (req, res) =>{ // user send me something
 }) 
 
 //login 
-app.post("/login", (req, res) => {
-  const userid = req.cookies.user_id;
-  res.cookie('user_id', userid); //we response with the cookie which will stay with the user.
-  res.redirect('/urls');
-});
 
+app.get("/login", (req,res) => { // user yell and they want something from me
+  const templateVars = {user: users[req.cookies['user_id']]}; 
+  res.render("url_login", templateVars)
+})
+
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const userLogged = authenticateUser(email, password, users); // return userFound aka user information 
+  if (userLogged) {
+    res.cookie('user_id', userLogged.id); //we response with the cookie which will stay with the user.
+    res.redirect('/urls'); 
+  } else {
+    res.status(403).send("Please check your username and password again.");
+  } 
+});
+  
 //logout
 app.post("/logout", (req,res) => {
-  res.clearCookie('username'); 
+  console.log("abc");
+  res.clearCookie('user_id'); 
   res.redirect("/urls");
 })
 
