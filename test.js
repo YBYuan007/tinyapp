@@ -10,6 +10,4 @@ let  urlDatabase = {
 };
 
 
-for (let i in urlDatabase) {
-  console.log(i);
-}
+urlDatabase["new"] = {longurl: }

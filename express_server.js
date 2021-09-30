@@ -18,7 +18,7 @@ function generateRandomString() {
 
 // database 
 
-const urlDatabase = {
+let urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
       userID: "aJ48lW"
@@ -29,14 +29,7 @@ const urlDatabase = {
   }
 };
 
-
-
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// }
-
-let  users = { 
+let users = { 
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
@@ -77,8 +70,21 @@ const authenticateUser = function (email, password, users) {
   return false;
 };
 
-// add new link to the index 
+const urlsForUser=function (id) { // id = res.cookies("user_id")
+  let user_url = {} ; 
+  for (let urldb in urlDatabase){
+    if (urlDatabase[urldb].userID === id ) {
+      console.log(id);
+      user_url[urldb]= {
+        "shortURL": urldb,
+        "longURL": urlDatabase[urldb].longURL,
+        "id": id};
+    }
+  };
+  return user_url; 
+}
 
+// add new url link 
 app.get("/urls/new", (req, res) => {
   // const email = users[userId].email; 
   if (users[req.cookies['user_id']]) {
@@ -99,9 +105,8 @@ app.post("/urls" , (req,res)=>{
 
 //url page information 
 app.get ("/urls", (req,res) =>{
-  // const email = users.userId.email; 
   const templateVars = {
-    urls: urlDatabase, 
+    urls: urlsForUser(req.cookies['user_id']),  // return an object that belongs to the user 
     user: users[req.cookies['user_id']]
   };
   res.render("urls_index", templateVars);
@@ -109,7 +114,6 @@ app.get ("/urls", (req,res) =>{
 
 // shortern to /u/
 app.get("/u/:shortURL", (req,res) => {
-  // console.log(req.params); 
   const sURL = req.params.shortURL; 
   const lURL = urlDatabase[sURL].longURL;
   if (lURL){
@@ -120,20 +124,26 @@ app.get("/u/:shortURL", (req,res) => {
 
 // individual page redirecting to the actual url 
 app.get("/urls/:shortURL", (req,res) => {
-  // console.log(req.params); 
   const sURL = req.params.shortURL; 
-  const lURL = urlDatabase[sURL].longURL;
-  // const email = users.userId.email; 
-  const templateVars={
-    shortURL:sURL, 
-    longURL:lURL, 
-    user: users[req.cookies['user_id']]
-  }
-  if (lURL){
-    res.render("urls_show", templateVars); 
-  } else {
-    res.send("Did not find this Long URL");
-  }
+  console.log("user database shortURL info: ", users[sURL]); 
+  if (!urlDatabase[sURL]) {res.send("Did not find this URL");}
+  else {
+    const lURL = urlDatabase[sURL].longURL;
+    const templateVars={
+      shortURL:sURL, 
+      longURL:lURL, 
+      user: users[req.cookies['user_id']]
+    }; 
+    console.log("user_id info in the cookies ", req.cookies['user_id']); //what is in the cookie -- cookie id name 
+    console.log("in the urldatabase corresponding sURL: ", urlDatabase[sURL]["userID"]); // what is in the database (this short URL) 's idname 
+    if (!users[req.cookies['user_id']]) {
+      res.send("you need to login to your account first."); 
+    } else if (req.cookies['user_id'] === urlDatabase[sURL]["userID"]) {
+      res.render("urls_show", templateVars); 
+    } else {
+      res.send("you don't have the authorization to access this link.");
+    }
+    }
 })
 
 app.post("/urls/:shortURL", (req,res) => {
@@ -151,7 +161,7 @@ app.get("/register", (req,res) => { // user yell and they want something from me
 })
 
 app.post("/register", (req, res) =>{ // user send me something 
-  console.log('req.body:', req.body);
+  // console.log('req.body:', req.body);
   const email = req.body.email;
   const password = req.body.password;
   if (!password || !email) {
@@ -188,7 +198,6 @@ app.post("/login", (req, res) => {
   
 //logout
 app.post("/logout", (req,res) => {
-  console.log("abc");
   res.clearCookie('user_id'); 
   res.redirect("/urls");
 })
@@ -196,11 +205,8 @@ app.post("/logout", (req,res) => {
 // delete from db 
 
 app.post("/urls/:shortURL/delete", (req,res) => {
-  // console.log(req.params); 
   const sURL = req.params.shortURL; 
-  // console.log(sURL); 
   delete urlDatabase[sURL]; 
-  // console.log(req.params);
   res.redirect("/urls")
 })
 
