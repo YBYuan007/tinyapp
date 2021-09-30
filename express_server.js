@@ -4,12 +4,11 @@ const app = express();
 const bodyParser = require("body-parser") ; 
 const PORT = 8080; 
 const cookieParser = require("cookie-parser");
+// const uuid = require('uuid/v4');
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(express.urlencoded({extended:true}));
-
-
 
 // generate random string 
 
@@ -23,10 +22,52 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 }
 
+let  users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+const createUser = function ( email, password, users) {
+  const userId = generateRandomString();
+  users[userId] = {
+    id: userId,
+    email,
+    password,
+  };
+  return userId;
+};
+
+const findUserByEmail = function (email, users) {
+  for (let userId in users) {
+    const user = users[userId];
+    if (email === user.email) {
+      return user;
+    }
+  }
+  return false;
+};
+
+const authenticateUser = function (email, password, users) {
+  const userFound = findUserByEmail(email, users);
+  if (userFound && userFound.password === password) {
+    return userFound;
+  }
+  return false;
+};
+
 // add new link to the index 
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username : req.cookies["username"]};
+  // const email = users[userId].email; 
+  const templateVars = {user: users[req.cookies['user_id']]};
   res.render("urls_new", templateVars);
 });
 
@@ -37,10 +78,10 @@ app.post("/urls" , (req,res)=>{
 }})
 
 //url page information 
-app.get ("/urls", (req,res) =>{
-  let  username = null; 
-  if(req.cookies.username) {username = req.cookies.username; }
-  const templateVars = {urls : urlDatabase, username};
+app.get ("/urls", (req,res) =>{ 
+  console.log("main page");
+  // const email = users.userId.email; 
+  const templateVars = {urls: urlDatabase, user: users[req.cookies['user_id']]};
   res.render("urls_index", templateVars);
 })
 
@@ -60,8 +101,12 @@ app.get("/urls/:shortURL", (req,res) => {
   // console.log(req.params); 
   const sURL = req.params.shortURL; 
   const lURL = urlDatabase[sURL];
-  const username = req.cookies[username];
-  const templateVars={shortURL:sURL, longURL:lURL , username}
+  // const email = users.userId.email; 
+  const templateVars={
+    shortURL:sURL, 
+    longURL:lURL, 
+    user: users[req.cookies['user_id']]
+  }
   if (lURL){
     res.render("urls_show", templateVars); 
   } else {
@@ -70,18 +115,40 @@ app.get("/urls/:shortURL", (req,res) => {
 })
 
 app.post("/urls/:shortURL", (req,res) => {
-  console.log("cool");
-  const username = null; 
   const sURL = req.params.shortURL; 
   const nlURL = req.body.newLongURL;
-  urlDatabase[sURL] = nlURL; 
+  urlDatabase[sURL] = nlURL;  // response with userID 
   res.redirect("/urls");
 })
 
+// registration 
+
+app.get("/register", (req,res) => { // user yell and they want something from me
+  const templateVars = {user: users[req.cookies['user_id']]}; 
+  res.render("url_register", templateVars)
+})
+
+app.post("/register", (req, res) =>{ // user send me something 
+  console.log('req.body:', req.body);
+  const email = req.body.email;
+  const password = req.body.password;
+  if (!password || !email) {
+    res.status(401).send("please enter a valid password / email");
+  }
+  const userFound = findUserByEmail(email, users); 
+  if(userFound) {
+    res.status(400).send("sorry, that user already exists!") ; 
+    return;
+  }
+  const userId= createUser(email, password, users); 
+  res.cookie("user_id", userId); 
+  res.redirect("/urls");
+}) 
+
 //login 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie('username', username);
+  const userid = req.cookies.user_id;
+  res.cookie('user_id', userid); //we response with the cookie which will stay with the user.
   res.redirect('/urls');
 });
 
@@ -90,7 +157,6 @@ app.post("/logout", (req,res) => {
   res.clearCookie('username'); 
   res.redirect("/urls");
 })
-
 
 // delete from db 
 
