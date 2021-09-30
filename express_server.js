@@ -38,6 +38,9 @@ let urlDatabase = {
   }
 };
 
+// const hashedPassword1 = bcrypt.hashSync("purple-monkey-dinosaur" , salt);
+// const hashedPassword2 = bcrypt.hashSync("dishwasher-funk", salt);
+
 const hashPW = function(userPW) {
   return bcrypt.hashSync(userPW, salt);
 };
@@ -98,6 +101,7 @@ const urlsForUser = function(id) {
 
 // add new url link
 app.get("/urls/new", (req, res) => {
+  // const email = users[userId].email;
   if (users[req.session.email]) {
     const templateVars = {user: users[req.session.email]};
     res.render("urls_new", templateVars);
@@ -121,7 +125,7 @@ app.post("/urls" , (req,res)=>{
 //url page information
 app.get("/urls", (req,res) =>{
   const templateVars = {
-    urls: urlsForUser(req.session.email),
+    urls: urlsForUser(req.session.email),  // return an object that belongs to the user
     user: users[req.session.email]
   };
   res.render("urls_index", templateVars);
@@ -165,7 +169,7 @@ app.post("/urls/:shortURL", (req,res) => {
     res.send("you need to login to your account first.");
   } else if (req.session.email  === urlDatabase[sURL]["userID"]) {
     const nlURL = req.body.newLongURL;
-    urlDatabase[sURL].longURL = nlURL;
+    urlDatabase[sURL].longURL = nlURL;  // response with userID
     res.redirect("/urls");
   } else {
     res.send("you don't have the authorization to access this link.");
@@ -173,12 +177,13 @@ app.post("/urls/:shortURL", (req,res) => {
 });
 
 // registration
-app.get("/register", (req,res) => {
+
+app.get("/register", (req,res) => { // user yell and they want something from me
   const templateVars = {user: users[req.session.email]};
   res.render("url_register", templateVars);
 });
 
-app.post("/register", (req, res) =>{
+app.post("/register", (req, res) =>{ // user send me something
   const email = req.body.email;
   const password = req.body.password;
   if (!password || !email) {
@@ -192,11 +197,12 @@ app.post("/register", (req, res) =>{
   const userId = createUser(email, password, users);
   req.session.email = userId;
   console.log(req.session.email);
+  // res.cookie("user_id", userId);
   res.redirect("/urls");
 });
 
 //login
-app.get("/login", (req,res) => {
+app.get("/login", (req,res) => { // user yell and they want something from me
   const templateVars = {user: users[req.session.email]};
   res.render("url_login", templateVars);
 });
@@ -204,9 +210,10 @@ app.get("/login", (req,res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const userLogged = authenticateUser(email, password, users);
+  const userLogged = authenticateUser(email, password, users); // return userFound aka user information
   if (userLogged) {
     req.session.email =  userLogged.id;
+    // res.cookie('user_id', userLogged.id); //we response with the cookie which will stay with the user.
     res.redirect('/urls');
   } else {
     res.status(403).send("Please check your username and password again.");
@@ -215,17 +222,19 @@ app.post("/login", (req, res) => {
   
 //logout
 app.post("/logout", (req,res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect("/urls");
 });
 
 // delete from db
+
 app.post("/urls/:shortURL/delete", (req,res) => {
   const sURL = req.params.shortURL;
   if (!users[req.session.email]) {
     res.send("you need to login to your account first.");
   } else if (req.session.email === urlDatabase[sURL]["userID"]) {
     delete urlDatabase[sURL];
+    
     res.redirect("/urls");
   } else {
     res.send("you don't have the authorization to access this link.");
