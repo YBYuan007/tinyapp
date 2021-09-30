@@ -17,10 +17,24 @@ function generateRandomString() {
 }
 
 // database 
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-}
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
+};
+
+
+
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// }
 
 let  users = { 
   "userRandomID": {
@@ -67,21 +81,29 @@ const authenticateUser = function (email, password, users) {
 
 app.get("/urls/new", (req, res) => {
   // const email = users[userId].email; 
-  const templateVars = {user: users[req.cookies['user_id']]};
-  res.render("urls_new", templateVars);
+  if (users[req.cookies['user_id']]) {
+    const templateVars = {user: users[req.cookies['user_id']]};
+    res.render("urls_new", templateVars);
+  } else {res.status(404).send("You need to login to shortern the URL.")}
 });
 
 app.post("/urls" , (req,res)=>{
   if (req.body.newLongURL === undefined) {
-    urlDatabase[generateRandomString()] = req.body.longURL;
+    urlDatabase[generateRandomString()] = {
+      longURL: req.body.longURL,
+      userID: req.cookies['user_id']
+    };
+    console.log(urlDatabase);
     res.redirect("/urls");
 }})
 
 //url page information 
-app.get ("/urls", (req,res) =>{ 
-  console.log("main page");
+app.get ("/urls", (req,res) =>{
   // const email = users.userId.email; 
-  const templateVars = {urls: urlDatabase, user: users[req.cookies['user_id']]};
+  const templateVars = {
+    urls: urlDatabase, 
+    user: users[req.cookies['user_id']]
+  };
   res.render("urls_index", templateVars);
 })
 
@@ -89,7 +111,7 @@ app.get ("/urls", (req,res) =>{
 app.get("/u/:shortURL", (req,res) => {
   // console.log(req.params); 
   const sURL = req.params.shortURL; 
-  const lURL = urlDatabase[sURL];
+  const lURL = urlDatabase[sURL].longURL;
   if (lURL){
   return res.redirect(lURL);
   } 
@@ -100,7 +122,7 @@ app.get("/u/:shortURL", (req,res) => {
 app.get("/urls/:shortURL", (req,res) => {
   // console.log(req.params); 
   const sURL = req.params.shortURL; 
-  const lURL = urlDatabase[sURL];
+  const lURL = urlDatabase[sURL].longURL;
   // const email = users.userId.email; 
   const templateVars={
     shortURL:sURL, 
@@ -117,7 +139,7 @@ app.get("/urls/:shortURL", (req,res) => {
 app.post("/urls/:shortURL", (req,res) => {
   const sURL = req.params.shortURL; 
   const nlURL = req.body.newLongURL;
-  urlDatabase[sURL] = nlURL;  // response with userID 
+  urlDatabase[sURL].longURL = nlURL;  // response with userID 
   res.redirect("/urls");
 })
 
