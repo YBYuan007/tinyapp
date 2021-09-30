@@ -1,13 +1,7 @@
-let  urlDatabase = {
-  b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
-  },
-  i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
-  }
-};
+const bcrypt = require("bcryptjs"); 
+const password = 'purple-monkey-dinosaur' ; 
+const hashedPassword = bcrypt.hashSync(password,10); 
 
-
-urlDatabase["new"] = {longurl: }
+console.log(hashedPassword);
+bcrypt.compareSync("pink-donkey-minotaur", hashedPassword);
+console.log(bcrypt.compareSync('purple-monkey-dinosaur',hashedPassword));

@@ -4,7 +4,9 @@ const app = express();
 const bodyParser = require("body-parser") ; 
 const PORT = 8080; 
 const cookieParser = require("cookie-parser");
-// const uuid = require('uuid/v4');
+const bcrypt = require("bcryptjs"); 
+const salt = bcrypt.genSaltSync(10);
+
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -29,16 +31,23 @@ let urlDatabase = {
   }
 };
 
+// const hashedPassword1 = bcrypt.hashSync("purple-monkey-dinosaur" , salt); 
+// const hashedPassword2 = bcrypt.hashSync("dishwasher-funk", salt); 
+
+const hashPW = function (userPW) {
+  return bcrypt.hashSync(userPW, salt); 
+}; 
+
 let users = { 
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: hashPW("purple-monkey-dinosaur")
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: hashPW("dishwasher-funk")
   }
 }
 
@@ -47,7 +56,7 @@ const createUser = function (email, password, users) {
   users[userId] = {
     id: userId,
     email,
-    password,
+    password: hashPW(password)
   };
   return userId;
 };
@@ -64,17 +73,16 @@ const findUserByEmail = function (email, users) {
 
 const authenticateUser = function (email, password, users) {
   const userFound = findUserByEmail(email, users);
-  if (userFound && userFound.password === password) {
+  if (userFound && bcrypt.compareSync(password, userFound.password)) {
     return userFound;
   } 
   return false;
 };
 
-const urlsForUser=function (id) { // id = res.cookies("user_id")
+const urlsForUser=function (id) { 
   let user_url = {} ; 
   for (let urldb in urlDatabase){
     if (urlDatabase[urldb].userID === id ) {
-      console.log(id);
       user_url[urldb]= {
         "shortURL": urldb,
         "longURL": urlDatabase[urldb].longURL,
@@ -99,7 +107,8 @@ app.post("/urls" , (req,res)=>{
       longURL: req.body.longURL,
       userID: req.cookies['user_id']
     };
-    console.log(urlDatabase);
+    console.log("urlDATABASE: ", urlDatabase);
+    console.log("users database: " , users);
     res.redirect("/urls");
 }})
 
@@ -125,7 +134,6 @@ app.get("/u/:shortURL", (req,res) => {
 // individual page redirecting to the actual url 
 app.get("/urls/:shortURL", (req,res) => {
   const sURL = req.params.shortURL; 
-  console.log("user database shortURL info: ", users[sURL]); 
   if (!urlDatabase[sURL]) {res.send("Did not find this URL");}
   else {
     const lURL = urlDatabase[sURL].longURL;
@@ -134,8 +142,6 @@ app.get("/urls/:shortURL", (req,res) => {
       longURL:lURL, 
       user: users[req.cookies['user_id']]
     }; 
-    // console.log("user_id info in the cookies ", req.cookies['user_id']); //what is in the cookie -- cookie id name 
-    // console.log("in the urldatabase corresponding sURL: ", urlDatabase[sURL]["userID"]); // what is in the database (this short URL) 's idname 
     if (!users[req.cookies['user_id']]) {
       res.send("you need to login to your account first."); 
     } else if (req.cookies['user_id'] === urlDatabase[sURL]["userID"]) {
@@ -167,7 +173,6 @@ app.get("/register", (req,res) => { // user yell and they want something from me
 })
 
 app.post("/register", (req, res) =>{ // user send me something 
-  // console.log('req.body:', req.body);
   const email = req.body.email;
   const password = req.body.password;
   if (!password || !email) {
