@@ -134,8 +134,8 @@ app.get("/urls/:shortURL", (req,res) => {
       longURL:lURL, 
       user: users[req.cookies['user_id']]
     }; 
-    console.log("user_id info in the cookies ", req.cookies['user_id']); //what is in the cookie -- cookie id name 
-    console.log("in the urldatabase corresponding sURL: ", urlDatabase[sURL]["userID"]); // what is in the database (this short URL) 's idname 
+    // console.log("user_id info in the cookies ", req.cookies['user_id']); //what is in the cookie -- cookie id name 
+    // console.log("in the urldatabase corresponding sURL: ", urlDatabase[sURL]["userID"]); // what is in the database (this short URL) 's idname 
     if (!users[req.cookies['user_id']]) {
       res.send("you need to login to your account first."); 
     } else if (req.cookies['user_id'] === urlDatabase[sURL]["userID"]) {
@@ -148,9 +148,15 @@ app.get("/urls/:shortURL", (req,res) => {
 
 app.post("/urls/:shortURL", (req,res) => {
   const sURL = req.params.shortURL; 
-  const nlURL = req.body.newLongURL;
-  urlDatabase[sURL].longURL = nlURL;  // response with userID 
-  res.redirect("/urls");
+  if (!users[req.cookies['user_id']]) {
+    res.send("you need to login to your account first."); 
+  } else if (req.cookies['user_id'] === urlDatabase[sURL]["userID"]) {
+    const nlURL = req.body.newLongURL;
+    urlDatabase[sURL].longURL = nlURL;  // response with userID 
+    res.redirect("/urls");
+  } else {
+    res.send("you don't have the authorization to access this link.");
+  }
 })
 
 // registration 
@@ -178,7 +184,6 @@ app.post("/register", (req, res) =>{ // user send me something
 }) 
 
 //login 
-
 app.get("/login", (req,res) => { // user yell and they want something from me
   const templateVars = {user: users[req.cookies['user_id']]}; 
   res.render("url_login", templateVars)
@@ -206,8 +211,14 @@ app.post("/logout", (req,res) => {
 
 app.post("/urls/:shortURL/delete", (req,res) => {
   const sURL = req.params.shortURL; 
-  delete urlDatabase[sURL]; 
-  res.redirect("/urls")
+  if (!users[req.cookies['user_id']]) {
+    res.send("you need to login to your account first."); 
+  } else if (req.cookies['user_id'] === urlDatabase[sURL]["userID"]) {
+    delete urlDatabase[sURL]; 
+    res.redirect("/urls"); 
+  } else {
+    res.send("you don't have the authorization to access this link.");
+  }
 })
 
 app.listen(PORT, ()=>{
