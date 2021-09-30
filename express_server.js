@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
+const {getUserByEmail} = require('./helpers'); 
 
 app.use(express.urlencoded({extended:true}));
 app.set("view engine", "ejs");
@@ -68,18 +69,18 @@ const createUser = function(email, password, users) {
   return userId;
 };
 
-const findUserByEmail = function(email, users) {
-  for (let userId in users) {
-    const user = users[userId];
-    if (email === user.email) {
-      return user;
-    }
-  }
-  return false;
-};
+// const getUserByEmail = function(email, users) {
+//   for (let userId in users) {
+//     const user = users[userId];
+//     if (email === user.email) {
+//       return user;
+//     }
+//   }
+//   return false;
+// };
 
 const authenticateUser = function(email, password, users) {
-  const userFound = findUserByEmail(email, users);
+  const userFound = getUserByEmail(email, users);
   if (userFound && bcrypt.compareSync(password, userFound.password)) {
     return userFound;
   }
@@ -189,7 +190,7 @@ app.post("/register", (req, res) =>{ // user send me something
   if (!password || !email) {
     res.status(401).send("please enter a valid password / email");
   }
-  const userFound = findUserByEmail(email, users);
+  const userFound = getUserByEmail(email, users);
   if (userFound) {
     res.status(400).send("sorry, that user already exists!");
     return;
