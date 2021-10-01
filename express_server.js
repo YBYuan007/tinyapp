@@ -103,8 +103,11 @@ const urlsForUser = function(id) {
 // add new url link
 app.get("/urls/new", (req, res) => {
   // const email = users[userId].email;
-  if (users[req.session.email]) {
-    const templateVars = {user: users[req.session.email]};
+  if (users[req.session.ID]) {
+    const templateVars = {
+      user: users[req.session.ID],
+      email: users[req.session.ID].email
+    };
     res.render("urls_new", templateVars);
   } else {
     res.status(404).send("You need to login to shortern the URL.");
@@ -115,7 +118,7 @@ app.post("/urls" , (req,res)=>{
   if (req.body.newLongURL === undefined) {
     urlDatabase[generateRandomString()] = {
       longURL: req.body.longURL,
-      userID: req.session.email
+      userID: req.session.ID
     };
     console.log("urlDATABASE: ", urlDatabase);
     console.log("users database: " , users);
@@ -124,12 +127,30 @@ app.post("/urls" , (req,res)=>{
 });
 
 //url page information
+// app.get("/urls", (req,res) =>{
+//   const templateVars = {
+//     urls: urlsForUser(req.session.email),  // return an object that belongs to the user
+//     user: users[req.session.email]
+//   };
+//   res.render("urls_index", templateVars);
+// });
+
 app.get("/urls", (req,res) =>{
-  const templateVars = {
-    urls: urlsForUser(req.session.email),  // return an object that belongs to the user
-    user: users[req.session.email]
-  };
-  res.render("urls_index", templateVars);
+  if (users[req.session.ID]) {
+    const templateVars = {
+      urls: urlsForUser(req.session.ID),  // return an object that belongs to the user
+      user: users[req.session.ID],
+      email: users[req.session.ID].email
+    };
+    res.render("urls_index", templateVars);
+  }
+  else {
+    const templateVars = {
+      urls: urlsForUser(req.session.ID),  
+      user: users[req.session.ID],
+      email: undefined
+    };
+    res.render("url_login", templateVars)};
 });
 
 // shortern to /u/
@@ -149,14 +170,15 @@ app.get("/urls/:shortURL", (req,res) => {
     res.send("Did not find this URL");
   } else {
     const lURL = urlDatabase[sURL].longURL;
-    const templateVars = {
-      shortURL:sURL,
-      longURL:lURL,
-      user: users[req.session.email]
-    };
-    if (!users[req.session.email ]) {
-      res.send("you need to login to your account first.");
-    } else if (req.session.email === urlDatabase[sURL]["userID"]) {
+    if (!users[req.session.ID ]) {
+     res.send("you need to login to your account first.");
+    } else if (req.session.ID === urlDatabase[sURL]["userID"]) {
+      const templateVars = {
+        shortURL:sURL,
+        longURL:lURL,
+        user: users[req.session.ID],
+        email: users[req.session.ID].email
+      };
       res.render("urls_show", templateVars);
     } else {
       res.send("you don't have the authorization to access this link.");
@@ -166,9 +188,9 @@ app.get("/urls/:shortURL", (req,res) => {
 
 app.post("/urls/:shortURL", (req,res) => {
   const sURL = req.params.shortURL;
-  if (!users[req.session.email]) {
+  if (!users[req.session.ID]) {
     res.send("you need to login to your account first.");
-  } else if (req.session.email  === urlDatabase[sURL]["userID"]) {
+  } else if (req.session.ID  === urlDatabase[sURL]["userID"]) {
     const nlURL = req.body.newLongURL;
     urlDatabase[sURL].longURL = nlURL;  // response with userID
     res.redirect("/urls");
@@ -180,7 +202,7 @@ app.post("/urls/:shortURL", (req,res) => {
 // registration
 
 app.get("/register", (req,res) => { // user yell and they want something from me
-  const templateVars = {user: users[req.session.email]};
+  const templateVars = {user: users[req.session.ID]};
   res.render("url_register", templateVars);
 });
 
@@ -196,15 +218,15 @@ app.post("/register", (req, res) =>{ // user send me something
     return;
   }
   const userId = createUser(email, password, users);
-  req.session.email = userId;
-  console.log(req.session.email);
+  req.session.ID= userId;
+  console.log(req.session.ID);
   // res.cookie("user_id", userId);
   res.redirect("/urls");
 });
 
 //login
 app.get("/login", (req,res) => { // user yell and they want something from me
-  const templateVars = {user: users[req.session.email]};
+  const templateVars = {user: users[req.session.ID]};
   res.render("url_login", templateVars);
 });
 
@@ -213,7 +235,7 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const userLogged = authenticateUser(email, password, users); // return userFound aka user information
   if (userLogged) {
-    req.session.email =  userLogged.id;
+    req.session.ID =  userLogged.id;
     // res.cookie('user_id', userLogged.id); //we response with the cookie which will stay with the user.
     res.redirect('/urls');
   } else {
@@ -231,12 +253,11 @@ app.post("/logout", (req,res) => {
 
 app.post("/urls/:shortURL/delete", (req,res) => {
   const sURL = req.params.shortURL;
-  if (!users[req.session.email]) {
+  if (!users[req.session.ID]) {
     res.send("you need to login to your account first.");
-  } else if (req.session.email === urlDatabase[sURL]["userID"]) {
-    delete urlDatabase[sURL];
-    
+  } else if (req.session.ID === urlDatabase[sURL]["userID"]) {
     res.redirect("/urls");
+    // delete urlDatabase[sURL];
   } else {
     res.send("you don't have the authorization to access this link.");
   }
