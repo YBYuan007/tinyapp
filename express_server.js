@@ -256,8 +256,8 @@ app.post("/urls/:shortURL/delete", (req,res) => {
   if (!users[req.session.ID]) {
     res.send("you need to login to your account first.");
   } else if (req.session.ID === urlDatabase[sURL]["userID"]) {
-    res.redirect("/urls");
-    // delete urlDatabase[sURL];
+    delete urlDatabase[sURL];
+    res.redirect("/urls")
   } else {
     res.send("you don't have the authorization to access this link.");
   }
