@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
-const {getUserByEmail} = require('./helpers'); 
+const {getUserByEmail} = require('./helpers');
 
 app.use(express.urlencoded({extended:true}));
 app.set("view engine", "ejs");
@@ -143,14 +143,14 @@ app.get("/urls", (req,res) =>{
       email: users[req.session.ID].email
     };
     res.render("urls_index", templateVars);
-  }
-  else {
+  } else {
     const templateVars = {
-      urls: urlsForUser(req.session.ID),  
+      urls: urlsForUser(req.session.ID),
       user: users[req.session.ID],
       email: undefined
     };
-    res.render("url_login", templateVars)};
+    res.render("url_login", templateVars);
+  }
 });
 
 // shortern to /u/
@@ -171,7 +171,7 @@ app.get("/urls/:shortURL", (req,res) => {
   } else {
     const lURL = urlDatabase[sURL].longURL;
     if (!users[req.session.ID ]) {
-     res.send("you need to login to your account first.");
+      res.send("you need to login to your account first.");
     } else if (req.session.ID === urlDatabase[sURL]["userID"]) {
       const templateVars = {
         shortURL:sURL,
@@ -218,7 +218,7 @@ app.post("/register", (req, res) =>{ // user send me something
     return;
   }
   const userId = createUser(email, password, users);
-  req.session.ID= userId;
+  req.session.ID = userId;
   console.log(req.session.ID);
   // res.cookie("user_id", userId);
   res.redirect("/urls");
@@ -256,8 +256,9 @@ app.post("/urls/:shortURL/delete", (req,res) => {
   if (!users[req.session.ID]) {
     res.send("you need to login to your account first.");
   } else if (req.session.ID === urlDatabase[sURL]["userID"]) {
-    delete urlDatabase[sURL];
-    res.redirect("/urls")
+    if (delete urlDatabase[sURL]) {
+      res.redirect("/urls");
+    }
   } else {
     res.send("you don't have the authorization to access this link.");
   }
